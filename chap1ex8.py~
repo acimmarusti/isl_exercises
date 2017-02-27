@@ -1,0 +1,31 @@
+from __future__ import print_function, division
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from pandas.tools.plotting import scatter_matrix
+
+filename = 'College.csv'
+
+rawdata = pd.read_csv(filename)
+
+fixdata = rawdata.rename(columns={rawdata.columns[0]: 'college'})
+
+print(fixdata.columns)
+
+#fig_scatter = scatter_matrix(fixdata.iloc[:,1:10])
+#plt.show()
+
+#fig_box = sns.boxplot(x='Private', y='Outstate', data=fixdata)
+#sns.plt.show()
+
+fixdata['Elite'] = ''
+theelite = fixdata[fixdata['Top10perc'] > 50].index
+noelite = fixdata[fixdata['Top10perc'] < 50].index
+
+fixdata.at[theelite, 'Elite'] = 'Yes'
+fixdata.at[noelite, 'Elite'] = 'No'
+
+data_summary = fixdata.describe()
+
+print(data_summary)
