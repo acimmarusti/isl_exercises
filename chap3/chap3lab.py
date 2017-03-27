@@ -6,6 +6,7 @@ import seaborn as sns
 from sklearn.datasets import load_boston
 from pandas.tools.plotting import scatter_matrix
 import statsmodels.formula.api as smf
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 boston = load_boston()
 
@@ -24,3 +25,36 @@ data = rawdata.replace(to_replace='None', value=np.nan).copy()
 slinreg = smf.ols('MEDV~LSTAT', data=data).fit()
 
 print(slinreg.summary())
+
+#Multi-linear regression#
+mlinreg = smf.ols('MEDV~LSTAT+AGE', data=data).fit()
+
+print(mlinreg.summary())
+
+#All-linear regression#
+allcols = list(data.columns)
+allcols.remove('MEDV')
+allcols = '+'.join(allcols)
+alinreg = smf.ols('MEDV~' + allcols, data=data).fit()
+
+print(alinreg.summary())
+
+#All-but linear regression#
+ablinreg = smf.ols('MEDV~' + allcols + '-AGE', data=data).fit()
+
+print(ablinreg.summary())
+
+#Interaction linear regression#
+ilinreg = smf.ols('MEDV~LSTAT*AGE', data=data).fit()
+
+print(ilinreg.summary())
+
+#Non-linear terms linear regression#
+nlinreg = smf.ols('MEDV~LSTAT+np.square(AGE)', data=data).fit()
+
+print(nlinreg.summary())
+
+plt.figure()
+plt.plot(data['LSTAT'], data['MEDV'], 'o')
+plt.plot(data['LSTAT'], slinreg.fittedvalues, 'r--')
+plt.show()
