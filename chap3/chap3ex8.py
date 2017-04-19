@@ -10,16 +10,13 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 filename = '../Auto.csv'
 
-rawdata = pd.read_csv(filename)
-
-#Convert to NaN#
-data = rawdata.replace(to_replace='?', value=np.nan).copy()
+data = pd.read_csv(filename, na_values='?').dropna()
 
 #Quantitative and qualitative predictors#
 print(data.dtypes)
 
 #Simple linear regression#
-slinreg = smf.ols('mpg~horsepower', data=data).fit()
+slinreg = smf.ols('mpg ~ horsepower', data=data).fit()
 
 print(slinreg.summary())
 
