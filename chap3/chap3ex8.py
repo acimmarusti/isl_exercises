@@ -5,9 +5,9 @@ import pandas as pd
 import seaborn as sns
 from pandas.tools.plotting import scatter_matrix
 import statsmodels.formula.api as smf
-from sklearn.linear_model import LinearRegression
-import scipy, scipy.stats
-from statsmodels.sandbox.regression.predstd import wls_prediction_std
+#from sklearn.linear_model import LinearRegression
+#import scipy, scipy.stats
+#from statsmodels.sandbox.regression.predstd import wls_prediction_std
 from statsmodels.stats.outliers_influence import variance_inflation_factor, summary_table
 
 filename = '../Auto.csv'
