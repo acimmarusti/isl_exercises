@@ -35,13 +35,13 @@ y = data['mpg']
 #Residuals#
 resd1 = y - fittedvalues
 
-f, axarr = plt.subplots(2, sharex=True)
+f, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
 
-axarr[0].plot(x, y, 'o')
-axarr[0].plot(x, fittedvalues, 'g-')
-axarr[0].plot(x, predict_ci_low, 'r--')
-axarr[0].plot(x, predict_ci_upp, 'r--')
-axarr[0].plot(x, predict_mean_ci_low, 'b--')
-axarr[0].plot(x, predict_mean_ci_upp, 'b--')
-axarr[1].plot(x, resd1, 'o')
+ax1.plot(x, y, 'o')
+ax1.plot(x, fittedvalues, 'g-')
+ax1.plot(x, predict_ci_low, 'r--')
+ax1.plot(x, predict_ci_upp, 'r--')
+ax1.plot(x, predict_mean_ci_low, 'b--')
+ax1.plot(x, predict_mean_ci_upp, 'b--')
+ax2.plot(resd1, fittedvalues, 'o')
 plt.show()
