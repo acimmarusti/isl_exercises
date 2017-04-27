@@ -5,10 +5,11 @@ import pandas as pd
 import seaborn as sns
 from pandas.tools.plotting import scatter_matrix
 import statsmodels.formula.api as smf
+from statsmodels.graphics.regressionplots import plot_leverage_resid2
+from statsmodels.stats.outliers_influence import summary_table
 #from sklearn.linear_model import LinearRegression
 #import scipy, scipy.stats
 #from statsmodels.sandbox.regression.predstd import wls_prediction_std
-from statsmodels.stats.outliers_influence import summary_table
 
 filename = '../Auto.csv'
 
@@ -54,28 +55,32 @@ for test_var in xcols:
 
     print('\n' + test_var + ': ' + str(tvif))
 
-"""
-st, fitdat, ss2 = summary_table(mlinreg, alpha=0.05)
+f, axarr = plt.subplots(2)
+#Checking studentized (normalized) residuals for non-linearity and outliers#
+sns.regplot(data['mpg'], mlinreg.resid_pearson, lowess=True, ax=axarr[0], line_kws={'color':'r', 'lw':1})
+axarr[0].set_title('Normalized residual plot')
+axarr[0].set_xlabel('Fitted values')
+axarr[0].set_ylabel('Normalized residuals')
 
-fittedvalues = fitdat[:,2]
-predict_mean_se  = fitdat[:,3]
-predict_mean_ci_low, predict_mean_ci_upp = fitdat[:,4:6].T
-predict_ci_low, predict_ci_upp = fitdat[:,6:8].T
+#Statsmodels leverage plot#
+f = plot_leverage_resid2(mlinreg, ax=axarr[1])
 
-x = data['horsepower']
-y = data['mpg']
+#Checking interaction terms#
+inter_test = smf.ols(formula='mpg~ cylinders*displacement + cylinders*horsepower + cylinders*weight + displacement*horsepower + displacement*weight + horsepower*weight', data=data[numcols]).fit()
 
-#Residuals#
-resd1 = y - fittedvalues
+print(inter_test.summary())
 
-f, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
+#Final "best" fit#
+final_fit = smf.ols(formula='np.log(mpg) ~ horsepower + weight + origin + year + np.square(horsepower) + np.square(weight) + np.square(year)', data=data[numcols]).fit()
 
-ax1.plot(x, y, 'o')
-ax1.plot(x, fittedvalues, 'g-')
-ax1.plot(x, predict_ci_low, 'r--')
-ax1.plot(x, predict_ci_upp, 'r--')
-ax1.plot(x, predict_mean_ci_low, 'b--')
-ax1.plot(x, predict_mean_ci_upp, 'b--')
-ax2.plot(resd1, fittedvalues, 'o')
-"""
+print(final_fit.summary())
+
+fig, axf = plt.subplots()
+#Checking studentized (normalized) residuals for non-linearity and outliers#
+sns.regplot(data['mpg'], final_fit.resid_pearson, lowess=True, ax=axf, line_kws={'color':'r', 'lw':1})
+axf.set_title('Normalized residual plot')
+axf.set_xlabel('Fitted values')
+axf.set_ylabel('Normalized residuals')
+
+
 plt.show()
