@@ -1,41 +1,45 @@
 from __future__ import print_function, division
-import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-import seaborn as sns
-from pandas.tools.plotting import scatter_matrix
 import statsmodels.api as sm
-from statsmodels.graphics.regressionplots import plot_leverage_resid2
-from statsmodels.stats.outliers_influence import summary_table
-#from sklearn.linear_model import LinearRegression
-#import scipy, scipy.stats
-#from statsmodels.sandbox.regression.predstd import wls_prediction_std
 
 #Data#
 np.random.seed(1)
 x = np.random.standard_normal(100)
 y = 2 * x + np.random.standard_normal(100)
 
-#Simple linear regression#
+#Simple linear regression y vs x#
 slinreg = sm.OLS(y, x).fit()
 
 print(slinreg.summary())
 
-#Simple linear regression 2#
+#Simple linear regression x vs y#
 slinreg2 = sm.OLS(x, y).fit()
 
 print(slinreg2.summary())
 
 """
-f, axarr = plt.subplots(2)
-#Checking studentized (normalized) residuals for non-linearity and outliers#
-sns.regplot(data['Sales'], mlinreg2.resid_pearson, lowess=True, ax=axarr[0], line_kws={'color':'r', 'lw':1})
-axarr[0].set_title('Normalized residual plot')
-axarr[0].set_xlabel('Fitted values')
-axarr[0].set_ylabel('Normalized residuals')
+This part is giving trouble. This may be a statmodels bug. Looks like sm (without formulas) does not have access to all the OLSResults methods...
+#Confirming t statistic manually for y vs x#
+yp = slinreg.fittedvalues()
 
-#Statsmodels leverage plot#
-f = plot_leverage_resid2(mlinreg2, ax=axarr[1])
+tstat = np.sqrt(len(x) - 1) * np.dot(x, y) / sqrt(np.dot(x, x) * np.dot(yp, yp) - np.square(np.dot(x, yp)))
 
-plt.show()
+print('t statistic: ', tstat)
 """
+
+#Adding an intercept#
+xn = np.copy(x)
+xn = sm.add_constant(xn)
+
+yn = np.copy(y)
+yn = sm.add_constant(yn)
+
+#Simple linear regression y vs x#
+nslinreg = sm.OLS(y, xn).fit()
+
+print(nslinreg.summary())
+
+#Simple linear regression x vs y#
+nslinreg2 = sm.OLS(x, yn).fit()
+
+print(nslinreg2.summary())
