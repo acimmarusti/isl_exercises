@@ -9,49 +9,31 @@ import statsmodels.formula.api as smf
 
 #Generate data#
 np.random.seed(1)
-x = np.random.standard_normal(100)
-eps = np.random.normal(loc=0, scale=0.25, size=100)
-eps2 = np.random.normal(loc=0, scale=0.1, size=100)
-eps3 = np.random.normal(loc=0, scale=0.5, size=100)
-
-y1 = -1 + 0.5 * x + eps
-y2 = -1 + 0.5 * x + eps2
-y3 = -1 + 0.5 * x + eps3
+x1 = np.random.uniform(size=100)
+x2 = 0.5 * x1 + np.random.standard_normal(100) / 10
+y = 2 + 2 * x1 + 0.3 * x2 + np.random.standard_normal(100)
 
 #Pandas dataframe#
 data = pd.DataFrame()
-data['x'] = x
-data['y1'] = y1
-data['y2'] = y2
-data['y3'] = y3
+data['x1'] = x1
+data['x2'] = x2
+data['y'] = y
 
-#Regressions y1 vs x#
-slinreg = smf.ols(formula='y1 ~ x', data=data).fit()
-print(slinreg.summary())
+#Regressions x2 vs x1 (removing constant or intercept term)#
+xlinreg = smf.ols(formula='x2 ~ x1 - 1', data=data).fit()
+print(xlinreg.summary())
 
-slinreg2 = smf.ols(formula='y1 ~ x + np.square(x)', data=data).fit()
-print(slinreg2.summary())
+#plots x2 vs x1#
+figx, axx = plt.subplots()
+axx.scatter(data['x2'], data['x1'])
+xlinfit = xlinreg.params
+xfit = xlinfit['x1'] * data['x1']
+axx.plot(xfit, data['x1'], label='linear regresion')
+axx.set_xlabel('x1')
+axx.set_ylabel('x2')
+axx.legend()
 
-#plots y1#
-fig, axf = plt.subplots(2, sharex=True)
-axf[0].scatter(data['y1'], data['x'])
-#abline plot complains of too many values to unpack...
-#abline_plot(model_results=slinreg, ax=axf[0])
-#abline_plot(model_results=slinreg2, ax=axf[0])
-linfit1 = slinreg.params
-yfit1 = linfit1['Intercept'] + linfit1['x'] * data['x']
-linfit2 = slinreg2.params
-yfit2 = linfit2['Intercept'] + linfit2['x'] * data['x'] + linfit2['np.square(x)'] * np.square(data['x'])
-axf[0].plot(yfit1, data['x'], label='linear regresion')
-axf[0].plot(yfit2, data['x'], label='quadratic regresion')
-axf[0].set_ylabel('y')
-axf[0].legend()
-
-sns.regplot(y=slinreg.resid_pearson, x=data['x'], lowess=True, ax=axf[1], line_kws={'color':'r', 'lw':1})
-axf[1].set_xlabel('x')
-axf[1].set_ylabel('Residuals poly regression')
-
-
+"""
 #Regression y2 vs x#
 slin2reg = smf.ols(formula='y2 ~ x', data=data).fit()
 print(slin2reg.summary())
@@ -84,5 +66,5 @@ axf3[0].set_ylabel('y')
 sns.regplot(y=slin3reg.resid_pearson, x=data['x'], lowess=True, ax=axf3[1], line_kws={'color':'r', 'lw':1})
 axf3[1].set_xlabel('x')
 axf3[1].set_ylabel('Residuals poly regression')
-
+"""
 plt.show()
