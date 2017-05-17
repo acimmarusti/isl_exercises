@@ -24,18 +24,28 @@ data = rawdata.replace(to_replace='None', value=np.nan).copy()
 allcols = list(data.columns)
 allcols.remove('MEDV')
 
-allparams = []
+allparams = pd.Series(index=allcols)
 
 for var in allcols:
 
-    slinreg = smf.ols('MEDV~' + var + '-1', data=data).fit()
-    allparams.append(slinreg.params)
-    
+    slinreg = smf.ols('MEDV~' + var, data=data).fit()
+    allparams[var] = slinreg.params[var]
+    if slinreg.pvalues[var] > 0.01:
+        print(var + ' fit coefficient has p-value larger than 1%')
+        print(var + ' fit has R2 = ' + str(slinreg.rsquared))
+        print(var + ' fit has F-statistic = ' + str(slinreg.fvalue) + ' with p-value of ' + str(slinreg.f_pvalue))
+   
+
 #All-linear regression#
 col_str = '+'.join(allcols)
 alinreg = smf.ols('MEDV~' + col_str, data=data).fit()
 
 print(alinreg.summary())
 
+#plot univariate reg coeff vs multi-reg coeff#
+fig, ax = plt.subplots()
+ax.scatter(alinreg.params[allcols], allparams)
+ax.set_xlabel('univariate coeff')
+ax.set_ylabel('multiple reg coeff')
 
-#plt.show()
+plt.show()
