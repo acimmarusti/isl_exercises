@@ -8,7 +8,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score
-from pandas.plotting import scatter_matrix
+from pandas.tools.plotting import scatter_matrix
 import statsmodels.formula.api as smf
 import statsmodels.api as sm
 
@@ -298,6 +298,13 @@ print(confusion_matrix(Ys_test, Ys_pred_knn))
 print("\nAccuracy KNN:", np.round(accuracy_score(Ys_test, Ys_pred_knn), 3))
 print("Precision KNN:", np.round(precision_score(Ys_test, Ys_pred_knn, pos_label='Up'), 3))
 print("Recall KNN:", np.round(recall_score(Ys_test, Ys_pred_knn, pos_label='Up'), 3))
+
+### K NEAREST NEIGHBORS WITH CARAVAN INSURANCE DATA###
+file_caravan = '../caravan_insurance_data/ticdata2000.txt'
+
+data_caravan = np.genfromtxt(file_caravan)
+
+print(data_caravan[:,0])
 
 plt.show() 
 
