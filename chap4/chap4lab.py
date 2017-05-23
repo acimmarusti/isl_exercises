@@ -4,6 +4,8 @@ import numpy as np
 import scipy
 import pandas as pd
 import seaborn as sns
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
@@ -300,13 +302,98 @@ print("Precision KNN:", np.round(precision_score(Ys_test, Ys_pred_knn, pos_label
 print("Recall KNN:", np.round(recall_score(Ys_test, Ys_pred_knn, pos_label='Up'), 3))
 
 ### K NEAREST NEIGHBORS WITH CARAVAN INSURANCE DATA###
+#Sklearn confusion matrices and precision metrics differ from those in the book, even when using the data splitting suggested in the book. There may be a bug somewhere that I haven't found#
 file_caravan = '../caravan_insurance_data/ticdata2000.txt'
+print('\n\n### K NEAREST NEIGHBORS WITH CARAVAN INSURANCE DATA###')
 
+#Loading data directly to numpy array.
+#Original data file does not have column names. Loading to dataframe would require parsing dictionary.txt as well
 data_caravan = np.genfromtxt(file_caravan)
 
-print(data_caravan[:,0])
+#Dimensions of data#
+dimdat = data_caravan.shape
+print('\nDataset dimensions: ', dimdat)
 
-plt.show() 
+#Breaking up the dataset between x(predictors/features) and y(target)#
+xcdata = data_caravan[:, 0: dimdat[1] - 2]
+ycdata = data_caravan[:, dimdat[1] - 1]
+
+#Summary of target/purchase#
+totals = np.unique(ycdata, return_counts=True)
+print('\nTarget breakdown: ', totals)
+
+#Standarizing the data using sklearn StandardScaler#
+xc_scaled = StandardScaler().fit_transform(xcdata)
+
+#Splitting the data for train/test
+#The book ISLR keeps the first 1000 rows as test set. I think given the low incidence of true values in ydata it's better to use a stratified split. Test set of 20% is close to the 1000 mark
+xc_train, xc_test, yc_train, yc_test = train_test_split(xc_scaled, ycdata, test_size=0.2, random_state=42, stratify=ycdata)
+
+#Data splitting suggested in the book#
+xci_train = xcdata[1000:]
+yci_train = ycdata[1000:]
+xci_test = xcdata[0:1000-1]
+yci_test = ycdata[0:1000-1]
+
+# Initiate KNN object
+cknn_clf = KNeighborsClassifier(n_neighbors=5)
+
+# Fit model. Let Xs_train = matrix of new_pred, Ys_train = matrix of variables.
+res_cknn_clf = cknn_clf.fit(xc_train, yc_train)
+
+#Predicted values for test set
+yc_pred_knn = res_cknn_clf.predict(xc_test)
+
+#Confusion matrix#
+print("\nConfusion matrix Caravan KNN:")
+print(confusion_matrix(yc_test, yc_pred_knn))
+
+#Accuracy, precision and recall#
+print("\nAccuracy Caravan KNN:", np.round(accuracy_score(yc_test, yc_pred_knn), 3))
+print("Precision Caravan KNN:", np.round(precision_score(yc_test, yc_pred_knn, pos_label=1), 3))
+print("Recall Caravan KNN:", np.round(recall_score(yc_test, yc_pred_knn, pos_label=1), 3))
+
+# Initiate logistic regression object
+clogit_clf = LogisticRegression()
+
+# Fit model. Let X_train = matrix of predictors, Y_train = matrix of variables.
+res_clogit_clf = clogit_clf.fit(xc_train, yc_train)
+
+#Predicted values for test set
+yc_pred_logit = res_clogit_clf.predict(xc_test)
+
+#Confusion matrix#
+print("\nConfusion matrix Caravan LogReg:")
+print(confusion_matrix(yc_test, yc_pred_logit))
+
+#Accuracy, precision and recall#
+print("\nAccuracy Caravan LogReg:", np.round(accuracy_score(yc_test, yc_pred_logit), 3))
+print("Precision Caravan LogReg:", np.round(precision_score(yc_test, yc_pred_logit, pos_label=1), 3))
+print("Recall Caravan LogReg:", np.round(recall_score(yc_test, yc_pred_logit, pos_label=1), 3))
+
+#Prediction probabilities#
+clogit_probs = res_clogit_clf.predict_proba(xc_test)
+
+#Probabilities of purchasing insurance#
+yes_probs = clogit_probs[:, 1]
+
+#Indices of events with posterior probabilities >= 25%#
+idx_g25 = yes_probs >= 0.25
+
+#New predition#
+yc_pred_nlogit = np.zeros(yc_test.size)
+yc_pred_nlogit[idx_g25] = 1
+
+#New Confusion matrix#
+print("\nConfusion matrix Caravan LogReg and posterior probability >= 25%:")
+print(confusion_matrix(yc_test, yc_pred_nlogit))
+
+#Accuracy, precision and recall#
+print("\nAccuracy Caravan LogReg (p>25%):", np.round(accuracy_score(yc_test, yc_pred_nlogit), 3))
+print("Precision Caravan LogReg (p>25%):", np.round(precision_score(yc_test, yc_pred_nlogit, pos_label=1), 3))
+print("Recall Caravan LogReg (p>25%):", np.round(recall_score(yc_test, yc_pred_nlogit, pos_label=1), 3))
+
+#plt.show() 
 
 
 
