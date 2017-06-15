@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import pandas as pd
-import seaborn as sns
+#import seaborn as sns
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
@@ -22,12 +22,12 @@ data = pd.read_csv(filename, na_values='?').dropna()
 #Create the binary variable mpg01#
 #data['mpg01'] = np.where(data['mpg'] > data['mpg'].median(), 1, 0)
 
-train_frac = 2. / 3.
-
 #Random sampling#
-data_train = data.sample(frac=train_frac, random_state=42)
+data_train = data.sample(n=196, random_state=42)
+data.loc[data.index, 'train'] = 'n'
+data.loc[data_train.index, 'train'] = 'y' 
+data_test = data[data['train'] == 'n']
 
-#data.loc[data_train.index, 'train'] = 
 
 #Numeric columns#
 numcols = list(data.columns)
@@ -44,11 +44,18 @@ X_train, X_test, Y_train, Y_test = train_test_split(X_data, Y_data, test_size=0.
 print('\n\n### LINEAR REGRESSION###')
 
 ## Linear regression with statsmodels ##
-lreg = smf.ols(formula='mpg~horsepower', data=data).fit()
+lreg = smf.ols(formula='mpg~horsepower', data=data_train).fit()
+print(np.mean(np.power(data_test['mpg'] - lreg.predict(data_test['horsepower']), 2)))
 
-print('\nLinear regression fit summary')
-print(lreg.summary())
+l2reg = smf.ols(formula='mpg~np.square(horsepower)', data=data_train).fit()
+print(np.mean(np.power(data_test['mpg'] - l2reg.predict(data_test['horsepower']), 2)))
 
+l3reg = smf.ols(formula='mpg~np.power(horsepower, 3)', data=data_train).fit()
+print(np.mean(np.power(data_test['mpg'] - l3reg.predict(data_test['horsepower']), 2)))
+
+#print(lreg.summary())
+#print(l2reg.summary())
+#print(l3reg.summary())
 
 """
 # Initiate logistic regression object
