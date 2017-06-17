@@ -48,9 +48,20 @@ print(np.mean(np.power(data_test['mpg'] - l2reg.predict(data_test['horsepower'])
 l3reg = smf.ols(formula='mpg~horsepower + np.power(horsepower, 2) + np.power(horsepower, 3)', data=data_train).fit()
 print(np.mean(np.power(data_test['mpg'] - l3reg.predict(data_test['horsepower']), 2)))
 
-#print(lreg.summary())
-#print(l2reg.summary())
-#print(l3reg.summary())
+"""
+print(lreg.summary())
+print(l2reg.summary())
+print(l3reg.summary())
+
+print('\nFit parameters')
+print(lreg.params)
+print(l2reg.params)
+print(l3reg.params)
+
+print('\n test vs predition statsmodels (debug)')
+print(data_test['mpg'].head())
+print(lreg.predict(data_test['horsepower']).head())
+"""
 
 print('\n\n### LINEAR REGRESSION WITH SKLEARN###')
 
@@ -62,28 +73,34 @@ x2_train = np.reshape(data_train[['horsepower', 'horsepower2']], (train_size, 2)
 x3_train = np.reshape(data_train[['horsepower', 'horsepower2', 'horsepower3']], (train_size, 3))
 
 test_size = len(data_test.index)
-y_test = np.reshape(data_test['mpg'], (test_size, 1))
+y_test = data_test['mpg']
 x_test = np.reshape(data_test['horsepower'], (test_size, 1))
 x2_test = np.reshape(data_test[['horsepower', 'horsepower2']], (test_size, 2))
 x3_test = np.reshape(data_test[['horsepower', 'horsepower2', 'horsepower3']], (test_size, 3))
 
 #X_train, X_test, Y_train, Y_test = train_test_split(x_data, y_data, test_size=0.5, random_state=2)
-                                                   
-# Initiate logistic regression object
-lin_clf = LinearRegression(fit_intercept=True)
-lin2_clf = LinearRegression(fit_intercept=True)
-lin3_clf = LinearRegression(fit_intercept=True)
+
+# Initiate linear regression object
+lin_obj = LinearRegression()
+lin2_obj = LinearRegression()
+lin3_obj = LinearRegression()
 
 # Fit model. Let X_train = matrix of predictors, Y_train = matrix of variables.
-reslin_clf = lin_clf.fit(x_train, y_train)
-reslin2_clf = lin2_clf.fit(x2_train, y_train)
-reslin3_clf = lin3_clf.fit(x3_train, y_train)
+reslin_obj = lin_obj.fit(x_train, y_train)
+reslin2_obj = lin2_obj.fit(x2_train, y_train)
+reslin3_obj = lin3_obj.fit(x3_train, y_train)
 
 #Predicted values for training set
-pred_lin = reslin_clf.predict(x_test)
-pred_lin2 = reslin2_clf.predict(x2_test)
-pred_lin3 = reslin3_clf.predict(x3_test)
- 
+pred_lin = reslin_obj.predict(x_test)
+pred_lin2 = reslin2_obj.predict(x2_test)
+pred_lin3 = reslin3_obj.predict(x3_test)
+
+"""
+print('\n test vs predition sklearn (debug)')
+print(y_test[:10])
+print(pred_lin[:10])
+"""
+
 print(np.mean(np.power(y_test - pred_lin, 2)))
 print(np.mean(np.power(y_test - pred_lin2, 2)))
 print(np.mean(np.power(y_test - pred_lin3, 2)))
@@ -102,7 +119,8 @@ def mean_cv_err(x_data, y_data, cvobj, regobj):
 
         pred_reg = res_reg.predict(xtest)
 
-        cv_errs.append(np.mean(np.power(ytest - pred_reg, 2)))
+        #Reshape necessary because predition produces a (1, n) numpy array, while ytest is (n, 1)#
+        cv_errs.append(np.mean(np.power(np.reshape(ytest, pred_reg.shape) - pred_reg, 2)))
     
     mean_err_out = np.mean(cv_errs)
     print('Mean error:')
@@ -167,3 +185,43 @@ while True:
     
     poly_cols.append(poly_hp)
 
+#NO PORTFOLIO DATA FOUND#
+
+#Get linear fit parameter function#
+def get_lreg_param(data, ylabel='y', xlabel='x', polyord=1):
+
+    bp_form = ylabel + '~' + xlabel
+    for order in range(2, polyord + 1):
+        bp_form += '+ np.power(' + xlabel + ', ' + str(order) + ')'
+
+    return smf.ols(formula=bp_form, data=data).fit().params
+
+#print(get_lreg_param(data_train, ylabel='mpg', xlabel='horsepower', polyord=1))
+
+
+def bootfn(data, target='y', predictor='x', order=1, repeat=1000):
+
+    boot_table = pd.DataFrame()
+    
+    for ite in range(repeat):
+    
+        data_boot = data.sample(n=len(data.index), replace=True)
+
+        boot_table[str(ite+1)] = get_lreg_param(data_boot, ylabel=target, xlabel=predictor, polyord=order)
+
+    results = pd.DataFrame()
+
+    boot_tab = boot_table.transpose()
+    
+    results['estimate'] = boot_tab.mean()
+    results['stderr'] = boot_tab.std()
+
+    return results
+
+print('\n\nBootstrapping coef estimation:')
+print('\nOrder 1')
+print(bootfn(data, target='mpg', predictor='horsepower', order=1))
+print('\nOrder 2')
+print(bootfn(data, target='mpg', predictor='horsepower', order=2))
+print('\nOrder 3')
+print(bootfn(data, target='mpg', predictor='horsepower', order=3))
