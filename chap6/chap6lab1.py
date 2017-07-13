@@ -30,3 +30,21 @@ data = rawdata.dropna()
 print('\nData dimensions after removing NaN:')
 print(data.shape)
 
+print(data.dtypes)
+
+def processSubset(data, x=feats, y=output):
+
+    X = np.array(data[feats])
+    Y = np.array(data[output])
+    
+    # Initiate logistic regression object
+    lreg = LinearRegression()
+
+    # Fit model. Let X = matrix of predictors, Y = matrix of variables.
+    lreg_res = logit_clf.fit(X, Y)
+
+    #Predicted values for training set
+    Y_pred = lreg_res.predict(X)
+
+    #Residual sum of squares#
+    rss = np.sum(np.square(Y_pred - Y))
