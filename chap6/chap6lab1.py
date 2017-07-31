@@ -48,3 +48,29 @@ def processSubset(data, x=feats, y=output):
 
     #Residual sum of squares#
     rss = np.sum(np.square(Y_pred - Y))
+
+    #total sum of squares#
+    tss = np.sum(np.square(Y - np.mean(Y)))
+
+    #Variance estimate#
+    var_est = np.square(np.std(Y))
+
+    #Number of predictors#
+    kpred = float(len(feats))
+
+    #Number of data points#
+    ndat = float(len(Y))
+    
+    #Cp#
+    cp = (rss + 2 * kpred * var_est) / ndat
+
+    #AIC#
+    aic = (rss + 2 * kpred * var_est) / (ndat * var_est)
+
+    #BIC#
+    bic = (rss + np.log(ndat) * kpred * var_est) / ndat
+
+    #Adjusted R^2#
+    ar2 = 1 - (rss / (ndat - kpred - 1)) / (tss / (ndat - 1))
+
+    return {""}
