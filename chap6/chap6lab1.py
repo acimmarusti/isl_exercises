@@ -39,7 +39,7 @@ xcols = list(numcols)
 xcols.remove('Salary')
 
 
-def processSubset(data, x=[], y=[]):
+def processSubset(data, x=['x'], y=['y']):
 
     X = np.array(data[x])
     Y = np.array(data[y])
@@ -88,24 +88,38 @@ def processSubset(data, x=[], y=[]):
 
     return {"Vars": ";".join(x), "model": lreg_res, "NumVar": kpred, "RSE": rse, "R2": r2, "Cp": cp, "AIC": aic, "BIC": bic, "AdjR2": ar2}
 
-kvars = 2
+
+def getBest(data, x=['x'], y=['y'], k=2):
+
+    tic = time.time()
+
+    results = []
+
+    for combo in itertools.combinations(x, k):
+        results.append(processSubset(data, x=list(combo), y=y))
+
+    #Wrap everything in DataFrame#
+    allmodels = pd.DataFrame(results)
+
+    #Choose the model with the highest R2
+    best_kmodel = allmodels.loc[allmodels['R2'].argmax()]
+
+    toc = time.time()
+
+    print("Processed ", len(allmodels.index), "models on", k, "predictors in", toc-tic, "seconds")
+
+    return best_kmodel
+
+
+final_models = pd.DataFrame(columns=['Vars','model','NumVar','RSE','R2','Cp','AIC','BIC','AdjR2'])
 
 tic = time.time()
 
-results = []
+for ii in range(1, len(xcols) + 1):
 
-for combo in itertools.combinations(xcols, kvars):
-    results.append(processSubset(data, x=list(combo), y='Salary'))
-
-#Wrap everything in DataFrame#
-allmodels = pd.DataFrame(results)
-
-best_kmodel = allmodels.loc[allmodels['R2'].argmax()]
+    final_models.loc[ii] = getBest(data, x=xcols, y='Salary', k=ii)
 
 toc = time.time()
+print("Total elapsed time:", toc-tic, "seconds")
 
-print(best_kmodel)
-print(toc-tic)
-
-
-
+print("Rsquared:", final_models['R2'])
