@@ -1,15 +1,11 @@
 from __future__ import print_function, division
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy
 import pandas as pd
 import time
 import itertools
-#import seaborn as sns
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split, LeaveOneOut, KFold
-from sklearn.linear_model import LogisticRegression, LinearRegression
-from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score
+from sklearn.model_selection import KFold
+from sklearn.linear_model import LinearRegression
 
 filename = '../Hitters.csv'
 
@@ -43,38 +39,50 @@ numcols = colmask.index[colmask == True]
 xcols = list(numcols)
 xcols.remove('Salary')
 
+#Calculated mean error on validation sets#
+def get_cv_err(x_data, y_data, cvobj, regobj):
 
-def processSubset(data, x=['x'], y=['y'], ksplits=10):
+    cv_errs = []
+
+    for train_idx, test_idx in cvobj.split(x_data):
+
+        xtrain, xtest = x_data[train_idx], x_data[test_idx]
+        ytrain, ytest = y_data[train_idx], y_data[test_idx]
+
+        res_reg = regobj.fit(xtrain, ytrain)
+
+        pred_reg = res_reg.predict(xtest)
+
+        #Reshape necessary because predition produces a (1, n) numpy array, while ytest is (n, 1)#
+        cv_errs.append(np.mean(np.power(np.reshape(ytest, pred_reg.shape) - pred_reg, 2)))
+    
+    return np.mean(cv_errs)
+
+
+#K-fold CV strategy#
+def kfold_err(data, x=['x'], y=['y'], ksplits=10):
+
+    X = np.array(data[x])
+    Y = np.array(data[y])
+    
+    #Kfold Cross-validation#
+    kfcv = KFold(n_splits=ksplits)
+
+    klreg = LinearRegression()
+
+    return get_cv_err(X, Y, kfcv, klreg)
+
+
+def processSubset(data, x=['x'], y=['y']):
 
     X = np.array(data[x])
     Y = np.array(data[y])
 
-    # Initiate logistic regression object
+    # Initiate linear regression object
     lreg = LinearRegression()
 
-    #Kfold Cross-validation#
-    kfcv = KFold(n_splits=ksplits)
-
-    cv_errs = []
-    rss_lst = []
-
-    for train_idx, test_idx in kfcv.split(X):
-
-        xtrain, xtest = X[train_idx], X[test_idx]
-        ytrain, ytest = Y[train_idx], Y[test_idx]
-
-        lreg_res = lreg.fit(xtrain, ytrain)
-
-        train_pred = lreg_res.predict(xtrain)
-        test_pred = lreg_res.predict(xtest)
-        
-        #Reshape necessary because predition produces a (1, n) numpy array, while ytest is (n, 1)#
-        cv_errs.append(np.mean(np.power(np.reshape(ytest, test_pred.shape) - test_pred, 2)))
-
-        rss_lst.append(np.sum(np.square(train_pred - ytrain)))
-
-    #Average k-fold CV error
-    cverr = np.mean(cv_errs)
+    #fit linear regression
+    lreg_res = lreg.fit(X, Y)
         
     #Predicted values for all data set
     Y_pred = lreg_res.predict(X)
@@ -86,7 +94,7 @@ def processSubset(data, x=['x'], y=['y'], ksplits=10):
     ndat = float(len(Y))
 
     #Residual sum of squares#
-    rss = np.mean(rss_lst)
+    rss = np.sum(np.square(Y_pred - Y))
 
     #total sum of squares#
     tss = np.sum(np.square(Y - np.mean(Y)))
@@ -112,7 +120,7 @@ def processSubset(data, x=['x'], y=['y'], ksplits=10):
     #Adjusted R^2#
     ar2 = 1 - (rss / (ndat - kpred - 1)) / (tss / (ndat - 1))
 
-    return {"Vars": ";".join(x), "model": lreg_res, "NumVar": kpred, "RSS": rss, "RSE": rse, "R2": r2, "Cp": cp, "AIC": aic, "BIC": bic, "AdjR2": ar2, "CVerr": cverr}
+    return {"Vars": ";".join(x), "model": lreg_res, "NumVar": kpred, "RSS": rss, "RSE": rse, "R2": r2, "Cp": cp, "AIC": aic, "BIC": bic, "AdjR2": ar2}
 
 
 def getBest(data, x=['x'], y=['y'], k=2, num_splits=10):
@@ -122,13 +130,16 @@ def getBest(data, x=['x'], y=['y'], k=2, num_splits=10):
     results = []
 
     for combo in itertools.combinations(x, k):
-        results.append(processSubset(data, x=list(combo), y=y, ksplits=num_splits))
+        results.append(processSubset(data, x=list(combo), y=y))
 
     #Wrap everything in DataFrame#
     allmodels = pd.DataFrame(results)
 
     #Choose the model with lowest RSS
     best_kmodel = allmodels.loc[allmodels['RSS'].argmin()]
+
+    #Cross-validation error#
+    best_kmodel['CVerr'] = kfold_err(data, x=best_kmodel['Vars'].split(";"), y=y, ksplits=num_splits)
     
     toc = time.time()
 
@@ -147,7 +158,7 @@ def forward(data, preds, x=['x'], y=['y'], num_splits=10):
     results = []
 
     for p in remain:
-        results.append(processSubset(data, x=preds + [p], y=y, ksplits=num_splits))
+        results.append(processSubset(data, x=preds + [p], y=y))
 
     #Wrap everything in DataFrame#
     allmodels = pd.DataFrame(results)
@@ -155,6 +166,9 @@ def forward(data, preds, x=['x'], y=['y'], num_splits=10):
     #Choose the model with lowest RSS
     best_model = allmodels.loc[allmodels['RSS'].argmin()]
 
+    #Cross-validation error#
+    best_model['CVerr'] = kfold_err(data, x=best_model['Vars'].split(";"), y=y, ksplits=num_splits)
+    
     toc = time.time()
 
     print("Processed ", len(allmodels.index), "models on", len(preds) + 1, "predictors in", toc-tic, "seconds")
@@ -169,7 +183,7 @@ def backward(data, preds, x=['x'], y=['y'], num_splits=10):
     results = []
 
     for combo in itertools.combinations(preds, len(preds) - 1):
-        results.append(processSubset(data, x=list(combo), y=y, ksplits=num_splits))
+        results.append(processSubset(data, x=list(combo), y=y))
 
     #Wrap everything in DataFrame#
     allmodels = pd.DataFrame(results)
@@ -177,6 +191,9 @@ def backward(data, preds, x=['x'], y=['y'], num_splits=10):
     #Choose the model with lowest RSS
     best_model = allmodels.loc[allmodels['RSS'].argmin()]
 
+    #Cross-validation error#
+    best_model['CVerr'] = kfold_err(data, x=best_model['Vars'].split(";"), y=y, ksplits=num_splits)
+    
     toc = time.time()
 
     print("Processed ", len(allmodels.index), "models on", len(preds) + 1, "predictors in", toc-tic, "seconds")
