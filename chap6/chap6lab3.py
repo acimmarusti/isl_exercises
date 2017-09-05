@@ -36,9 +36,8 @@ X_train, X_test, Y_train, Y_test = train_test_split(data[xcols], data['Salary'],
 
 ###Principal components regression###
 pca = PCA()
-X_red = pca.fit_transform(scale(X))
-n = len(X_red)
-
+X_train_red = pca.fit_transform(scale(X_train))
+n = len(X_train_red)
 
 #10-fold Cross-validation object#
 kfcv = KFold(n_splits=10, shuffle=True, random_state=2)
@@ -47,26 +46,36 @@ kfcv = KFold(n_splits=10, shuffle=True, random_state=2)
 lreg = LinearRegression()
 
 #MSE initialization to only intercept#
-scores_intercept = cross_val_score(lreg, np.zeros((n,1)), y=Y, scoring='neg_mean_squared_error', cv=kfcv)
+scores_intercept = cross_val_score(lreg, np.zeros((n,1)), y=Y_train, scoring='neg_mean_squared_error', cv=kfcv)
 mse = [-np.mean(scores_intercept)]
 mse_std = [np.std(scores_intercept)]
 
 for ii in range(1, len(xcols) + 1):
-    scores = cross_val_score(lreg, X_red[:,:ii], y=Y, scoring='neg_mean_squared_error', cv=kfcv)
+    scores = cross_val_score(lreg, X_train_red[:,:ii], y=Y_train, scoring='neg_mean_squared_error', cv=kfcv)
     mse.append(-np.mean(scores))
     mse_std.append(np.std(scores))
+
+#Test set prediction#
+npc = 6
+X_test_red = pca.transform(scale(X_test))[:,:npc + 1]
+nlreg = LinearRegression()
+nlreg.fit(X_train_red[:,:npc + 1], Y_train)
+Y_test_pred = nlreg.predict(X_test_red)
+
+print('\nTest set MSE:')
+print(mean_squared_error(Y_test, Y_test_pred))
 
 plt.figure()
 plt.plot(mse, '-v')
 plt.title('PCR')
 plt.xlabel('Number of principal components in regression')
-plt.ylabel('MSE mean')
+plt.ylabel('Train MSE mean')
 
 plt.figure()
 plt.plot(mse_std, '-v')
 plt.title('PCR')
 plt.xlabel('Number of principal components in regression')
-plt.ylabel('MSE Stdev')
+plt.ylabel('Train MSE Stdev')
 plt.tight_layout()
 
 """
