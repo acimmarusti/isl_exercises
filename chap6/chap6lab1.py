@@ -6,6 +6,7 @@ import time
 import itertools
 from sklearn.model_selection import KFold
 from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
 
 filename = '../Hitters.csv'
 
@@ -54,8 +55,9 @@ def get_cv_err(x_data, y_data, cvobj, regobj):
         pred_reg = res_reg.predict(xtest)
 
         #Reshape necessary because predition produces a (1, n) numpy array, while ytest is (n, 1)#
-        cv_errs.append(np.mean(np.power(np.reshape(ytest, pred_reg.shape) - pred_reg, 2)))
-    
+        #cv_errs.append(np.mean(np.power(np.reshape(ytest, pred_reg.shape) - pred_reg, 2)))
+        cv_errs.append(np.mean(mean_squared_error(np.reshape(ytest, pred_reg.shape), pred_reg)))
+        
     return np.mean(cv_errs)
 
 

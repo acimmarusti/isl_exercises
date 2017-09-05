@@ -62,14 +62,34 @@ nlreg = LinearRegression()
 nlreg.fit(X_train_red[:,:npc + 1], Y_train)
 Y_test_pred = nlreg.predict(X_test_red)
 
-print('\nTest set MSE:')
+print('\nPCR Test set MSE:')
 print(mean_squared_error(Y_test, Y_test_pred))
 
+##Partial least squares##
+nt = len(X_train)
+
+mse_pls = []
+mse_pls_std = []
+
+for ii in range(1, len(xcols) + 1):
+    pls = PLSRegression(n_components=ii)
+    scores_pls = cross_val_score(pls, scale(X_train), y=Y_train, scoring='neg_mean_squared_error', cv=kfcv)
+    mse_pls.append(-np.mean(scores_pls))
+    mse_pls_std.append(np.std(scores))
+
+pls = PLSRegression(n_components=2)
+pls.fit(scale(X_train), Y_train)
+
+print('\nPLS Test set MSE:')
+print(mean_squared_error(Y_test, pls.predict(scale(X_test))))
+
+#PCR plots#
 plt.figure()
 plt.plot(mse, '-v')
 plt.title('PCR')
 plt.xlabel('Number of principal components in regression')
 plt.ylabel('Train MSE mean')
+plt.tight_layout()
 
 plt.figure()
 plt.plot(mse_std, '-v')
@@ -78,48 +98,20 @@ plt.xlabel('Number of principal components in regression')
 plt.ylabel('Train MSE Stdev')
 plt.tight_layout()
 
-"""
-print('\nBest RidgeCV alpha value:')
-print(rcv.alpha_)
+#PLS plots#
+plt.figure()
+plt.plot(mse_pls, '-v')
+plt.title('PLS')
+plt.xlabel('Number of principal components in regression')
+plt.ylabel('Train MSE mean')
+plt.tight_layout()
 
-#Ridge regression using best alpha#
-rbest = Ridge(alpha=rcv.alpha_, normalize=True)
-rbest.fit(X_train, Y_train)
-
-print('\nBest Ridge MSE:')
-print(mean_squared_error(Y_test, rbest.predict(X_test)))
-
-print('\nRidge Coeficients:')
-print(pd.Series(rbest.coef_, index=xcols))
-
-#Full Lasso regression#
-lasso = Lasso(max_iter=10000, normalize=True)
-coefs2 = []
-
-for a in alphas:
-    lasso.set_params(alpha=a)
-    lasso.fit(scale(X), Y)
-    coefs2.append(lasso.coef_)
+plt.figure()
+plt.plot(mse_pls_std, '-v')
+plt.title('PLS')
+plt.xlabel('Number of principal components in regression')
+plt.ylabel('Train MSE Stdev')
+plt.tight_layout()
 
 
-
-##Lasso regression with cross-validation##
-
-#LassoCV with 10-fold cross-validation(similar to ISLR)#
-lcv = LassoCV(alphas=None, max_iter=100000, normalize=True, cv=kfcv, n_jobs=2)
-lcv.fit(X_train, Y_train)
-
-print('\nBest LassoCV alpha value:')
-print(lcv.alpha_)
-
-#Ridge regression using best alpha#
-lbest = Lasso(alpha=lcv.alpha_, normalize=True)
-lbest.fit(X_train, Y_train)
-
-print('\nBest Lasso MSE:')
-print(mean_squared_error(Y_test, lbest.predict(X_test)))
-
-print('\nLasso Coeficients:')
-print(pd.Series(lbest.coef_, index=xcols))
-"""
 plt.show()
