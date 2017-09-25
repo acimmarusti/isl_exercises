@@ -8,38 +8,6 @@ from sklearn.model_selection import KFold
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 
-filename = '../Hitters.csv'
-
-#Load raw data to pandas dataframe#
-rawdata = pd.read_csv(filename)
-
-#Raw data Dimensions#
-print('\nRaw data dimensions:')
-print(rawdata.shape)
-
-#Column names#
-print(rawdata.columns)
-
-#drop the missing values#
-data = rawdata.dropna()
-
-#Data dimensions#
-print('\nData dimensions after removing NaN:')
-print(data.shape)
-
-print(data.dtypes)
-
-#Binarize columns#
-data['LeagueN'] = (data['League'] == 'N').astype(int)
-data['DivisionW'] = (data['Division'] == 'W').astype(int)
-data['NewLeagueN'] = (data['NewLeague'] == 'N').astype(int)
-
-#Only numerical cols#
-colmask = data.dtypes != object
-numcols = colmask.index[colmask == True]
-xcols = list(numcols)
-xcols.remove('Salary')
-
 #Calculated mean error on validation sets#
 def get_cv_err(x_data, y_data, cvobj, regobj):
 
@@ -244,7 +212,7 @@ def backward_sel(data, x=['x'], y=['y'], nsplits=10):
 
     tic = time.time()
 
-    pred = xcols
+    pred = x
 
     while(len(pred) > 1):
 
@@ -256,66 +224,99 @@ def backward_sel(data, x=['x'], y=['y'], nsplits=10):
 
     return models
 
+if __name__ == "__main__":
 
-best_models = best_subset(data, x=xcols, y='Salary', nsplits=10)
+    filename = '../Hitters.csv'
 
-print('\nLowest CV error best subset model:')
-print(best_models.loc[best_models['CVerr'].argmin()])
+    #Load raw data to pandas dataframe#
+    rawdata = pd.read_csv(filename)
 
-fwd_models = forward_sel(data, x=xcols, y='Salary', nsplits=10)
+    #Raw data Dimensions#
+    print('\nRaw data dimensions:')
+    print(rawdata.shape)
 
-print('\nLowest CV error best forward model:')
-print(fwd_models.loc[fwd_models['CVerr'].argmin()])
+    #Column names#
+    print(rawdata.columns)
 
-back_models = backward_sel(data, x=xcols, y='Salary', nsplits=10)
+    #drop the missing values#
+    data = rawdata.dropna()
 
-print('\nLowest CV error best backward model:')
-print(back_models.loc[back_models['CVerr'].argmin()])
+    #Data dimensions#
+    print('\nData dimensions after removing NaN:')
+    print(data.shape)
 
-fbest, ((axbest1, axbest2), (axbest3, axbest4), (axbest5, axbest6)) = plt.subplots(3, 2, sharex='col')
-axbest1.plot(best_models['NumVar'], best_models['AdjR2'])
-axbest1.set_ylabel('Adjusted R2')
-axbest2.plot(best_models['NumVar'], best_models['AIC'])
-axbest2.set_ylabel('AIC')
-axbest3.plot(best_models['NumVar'], best_models['Cp'])
-axbest3.set_ylabel('Cp')
-axbest4.plot(best_models['NumVar'], best_models['BIC'])
-axbest4.set_ylabel('BIC')
-axbest5.set_xlabel('k')
-axbest6.plot(best_models['NumVar'], best_models['CVerr'])
-axbest6.set_xlabel('k')
-axbest6.set_ylabel('CV error')
-fbest.suptitle('Best subset selection')
+    print(data.dtypes)
 
-ffwd, ((axfwd1, axfwd2), (axfwd3, axfwd4), (axfwd5, axfwd6)) = plt.subplots(3, 2, sharex='col')
-axfwd1.plot(fwd_models['NumVar'], fwd_models['AdjR2'])
-axfwd1.set_ylabel('Adjusted R2')
-axfwd2.plot(fwd_models['NumVar'], fwd_models['AIC'])
-axfwd2.set_ylabel('AIC')
-axfwd3.plot(fwd_models['NumVar'], fwd_models['Cp'])
-axfwd3.set_ylabel('Cp')
-axfwd4.plot(fwd_models['NumVar'], fwd_models['BIC'])
-axfwd4.set_ylabel('BIC')
-axfwd5.set_xlabel('k')
-axfwd6.plot(fwd_models['NumVar'], fwd_models['CVerr'])
-axfwd6.set_xlabel('k')
-axfwd6.set_ylabel('CV error')
-ffwd.suptitle('Forward subset selection')
+    #Binarize columns#
+    data['LeagueN'] = (data['League'] == 'N').astype(int)
+    data['DivisionW'] = (data['Division'] == 'W').astype(int)
+    data['NewLeagueN'] = (data['NewLeague'] == 'N').astype(int)
 
-fback, ((axback1, axback2), (axback3, axback4), (axback5, axback6)) = plt.subplots(3, 2, sharex='col')
-axback1.plot(back_models['NumVar'], back_models['AdjR2'])
-axback1.set_ylabel('Adjusted R2')
-axback2.plot(back_models['NumVar'], back_models['AIC'])
-axback2.set_ylabel('AIC')
-axback3.plot(back_models['NumVar'], back_models['Cp'])
-axback3.set_ylabel('Cp')
-axback4.plot(back_models['NumVar'], back_models['BIC'])
-axback4.set_ylabel('BIC')
-axback5.set_xlabel('k')
-axback6.plot(back_models['NumVar'], back_models['CVerr'])
-axback6.set_xlabel('k')
-axback6.set_ylabel('CV error')
-fback.suptitle('Backward subset selection')
+    #Only numerical cols#
+    colmask = data.dtypes != object
+    numcols = colmask.index[colmask == True]
+    xcols = list(numcols)
+    xcols.remove('Salary')
 
-plt.tight_layout
-plt.show()
+    best_models = best_subset(data, x=xcols, y='Salary', nsplits=10)
+
+    print('\nLowest CV error best subset model:')
+    print(best_models.loc[best_models['CVerr'].argmin()])
+    
+    fwd_models = forward_sel(data, x=xcols, y='Salary', nsplits=10)
+    
+    print('\nLowest CV error best forward model:')
+    print(fwd_models.loc[fwd_models['CVerr'].argmin()])
+    
+    back_models = backward_sel(data, x=xcols, y='Salary', nsplits=10)
+    
+    print('\nLowest CV error best backward model:')
+    print(back_models.loc[back_models['CVerr'].argmin()])
+    
+    fbest, ((axbest1, axbest2), (axbest3, axbest4), (axbest5, axbest6)) = plt.subplots(3, 2, sharex='col')
+    axbest1.plot(best_models['NumVar'], best_models['AdjR2'])
+    axbest1.set_ylabel('Adjusted R2')
+    axbest2.plot(best_models['NumVar'], best_models['AIC'])
+    axbest2.set_ylabel('AIC')
+    axbest3.plot(best_models['NumVar'], best_models['Cp'])
+    axbest3.set_ylabel('Cp')
+    axbest4.plot(best_models['NumVar'], best_models['BIC'])
+    axbest4.set_ylabel('BIC')
+    axbest5.set_xlabel('k')
+    axbest6.plot(best_models['NumVar'], best_models['CVerr'])
+    axbest6.set_xlabel('k')
+    axbest6.set_ylabel('CV error')
+    fbest.suptitle('Best subset selection')
+    
+    ffwd, ((axfwd1, axfwd2), (axfwd3, axfwd4), (axfwd5, axfwd6)) = plt.subplots(3, 2, sharex='col')
+    axfwd1.plot(fwd_models['NumVar'], fwd_models['AdjR2'])
+    axfwd1.set_ylabel('Adjusted R2')
+    axfwd2.plot(fwd_models['NumVar'], fwd_models['AIC'])
+    axfwd2.set_ylabel('AIC')
+    axfwd3.plot(fwd_models['NumVar'], fwd_models['Cp'])
+    axfwd3.set_ylabel('Cp')
+    axfwd4.plot(fwd_models['NumVar'], fwd_models['BIC'])
+    axfwd4.set_ylabel('BIC')
+    axfwd5.set_xlabel('k')
+    axfwd6.plot(fwd_models['NumVar'], fwd_models['CVerr'])
+    axfwd6.set_xlabel('k')
+    axfwd6.set_ylabel('CV error')
+    ffwd.suptitle('Forward subset selection')
+    
+    fback, ((axback1, axback2), (axback3, axback4), (axback5, axback6)) = plt.subplots(3, 2, sharex='col')
+    axback1.plot(back_models['NumVar'], back_models['AdjR2'])
+    axback1.set_ylabel('Adjusted R2')
+    axback2.plot(back_models['NumVar'], back_models['AIC'])
+    axback2.set_ylabel('AIC')
+    axback3.plot(back_models['NumVar'], back_models['Cp'])
+    axback3.set_ylabel('Cp')
+    axback4.plot(back_models['NumVar'], back_models['BIC'])
+    axback4.set_ylabel('BIC')
+    axback5.set_xlabel('k')
+    axback6.plot(back_models['NumVar'], back_models['CVerr'])
+    axback6.set_xlabel('k')
+    axback6.set_ylabel('CV error')
+    fback.suptitle('Backward subset selection')
+    
+    plt.tight_layout
+    plt.show()
