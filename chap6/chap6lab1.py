@@ -24,7 +24,7 @@ def get_cv_err(x_data, y_data, cvobj, regobj):
 
         #Reshape necessary because predition produces a (1, n) numpy array, while ytest is (n, 1)#
         #cv_errs.append(np.mean(np.power(np.reshape(ytest, pred_reg.shape) - pred_reg, 2)))
-        cv_errs.append(np.mean(mean_squared_error(np.reshape(ytest, pred_reg.shape), pred_reg)))
+        cv_errs.append(mean_squared_error(ytest, pred_reg))
         
     return np.mean(cv_errs)
 
@@ -69,6 +69,9 @@ def processSubset(data, x=['x'], y=['y']):
     #total sum of squares#
     tss = np.sum(np.square(Y - np.mean(Y)))
 
+    #Mean squared error#
+    mse = mean_squared_error(Y, Y_pred)
+    
     #R squared#
     r2 = 1 - rss / tss
 
@@ -90,7 +93,7 @@ def processSubset(data, x=['x'], y=['y']):
     #Adjusted R^2#
     ar2 = 1 - (rss / (ndat - kpred - 1)) / (tss / (ndat - 1))
 
-    return {"Vars": ";".join(x), "model": lreg_res, "NumVar": kpred, "RSS": rss, "RSE": rse, "R2": r2, "Cp": cp, "AIC": aic, "BIC": bic, "AdjR2": ar2}
+    return {"Vars": ";".join(x), "model": lreg_res, "NumVar": kpred, "RSS": rss, "RSE": rse, "R2": r2, "Cp": cp, "AIC": aic, "BIC": bic, "AdjR2": ar2, "MSE": mse}
 
 
 def getBest(data, x=['x'], y=['y'], k=2, num_splits=10):
@@ -173,7 +176,7 @@ def backward(data, preds, x=['x'], y=['y'], num_splits=10):
 
 def best_subset(data, x=['x'], y=['y'], nsplits=10):
 
-    models = pd.DataFrame(columns=['Vars','model','NumVar','RSS','RSE','R2','Cp','AIC','BIC','AdjR2','CVerr'])
+    models = pd.DataFrame(columns=['Vars','model','NumVar','RSS','RSE','MSE','R2','Cp','AIC','BIC','AdjR2','CVerr'])
 
     tic = time.time()
 
@@ -189,7 +192,7 @@ def best_subset(data, x=['x'], y=['y'], nsplits=10):
 
 def forward_sel(data, x=['x'], y=['y'], nsplits=10):
 
-    models = pd.DataFrame(columns=['Vars','model','NumVar','RSS','RSE','R2','Cp','AIC','BIC','AdjR2','CVerr'])
+    models = pd.DataFrame(columns=['Vars','model','NumVar','RSS','RSE','MSE','R2','Cp','AIC','BIC','AdjR2','CVerr'])
 
     tic = time.time()
 
@@ -208,7 +211,7 @@ def forward_sel(data, x=['x'], y=['y'], nsplits=10):
 
 def backward_sel(data, x=['x'], y=['y'], nsplits=10):
 
-    models = pd.DataFrame(columns=['Vars','model','NumVar','RSS','RSE','R2','Cp','AIC','BIC','AdjR2','CVerr'])
+    models = pd.DataFrame(columns=['Vars','model','NumVar','RSS','RSE','MSE','R2','Cp','AIC','BIC','AdjR2','CVerr'])
 
     tic = time.time()
 
