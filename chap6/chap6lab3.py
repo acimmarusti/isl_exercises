@@ -10,7 +10,7 @@ from sklearn.decomposition import PCA
 from sklearn.cross_decomposition import PLSRegression, PLSSVD
 from sklearn.metrics import mean_squared_error
 
-
+#CSV file#
 filename = '../Hitters.csv'
 
 #Load raw data to pandas dataframe#
