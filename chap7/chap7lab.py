@@ -5,6 +5,7 @@ import pandas as pd
 import time
 import statsmodels.formula.api as smf
 from statsmodels.stats.anova import anova_lm
+from statsmodels.stats.outliers_influence import variance_inflation_factor, summary_table
 from statsmodels.sandbox.regression.predstd import wls_prediction_std
 
 
@@ -40,9 +41,18 @@ lreg_pred = lreg.get_prediction(testdata, weights=1)
 
 prediction = lreg_pred.summary_frame(alpha=0.05)
 
-testdata = testdata.merge(prediction, left_index=True, right_index=True)
+testdata[['pred','stderr','mean_ci_lower','mean_ci_upper','obs_ci_lower','obs_ci_upper']] = prediction
 
+f, ax = plt.subplots()
+ax.plot(data['age'], data['wage'], 'o')
+ax.plot(testdata['age'], testdata['pred'], 'g-')
 
+ax.plot(testdata['age'], testdata['obs_ci_lower'], 'r--')
+ax.plot(testdata['age'], testdata['obs_ci_upper'], 'r--')
+ax.plot(testdata['age'], testdata['mean_ci_lower'], 'b--')
+ax.plot(testdata['age'], testdata['mean_ci_upper'], 'b--')
+
+plt.show()
 """
 st, fitdata, ss2 = summary_table(lreg, alpha=0.05)
 
