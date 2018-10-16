@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import time
 import statsmodels.formula.api as smf
-from statsmodels.stats.anova import anova_lm
+import statsmodels.api as sm
 from statsmodels.stats.outliers_influence import variance_inflation_factor, summary_table
 from statsmodels.sandbox.regression.predstd import wls_prediction_std
 
@@ -51,6 +51,28 @@ ax.plot(testdata['age'], testdata['obs_ci_lower'], 'r--')
 ax.plot(testdata['age'], testdata['obs_ci_upper'], 'r--')
 ax.plot(testdata['age'], testdata['mean_ci_lower'], 'b--')
 ax.plot(testdata['age'], testdata['mean_ci_upper'], 'b--')
+
+#ANOVA#
+
+lreg1 = smf.ols(formula='wage~age', data=data).fit()
+lreg2 = smf.ols(formula='wage~age + np.power(age, 2)', data=data).fit()
+lreg3 = smf.ols(formula='wage~age + np.power(age, 2) + np.power(age, 3)', data=data).fit()
+lreg4 = smf.ols(formula='wage~age + np.power(age, 2) + np.power(age, 3) + np.power(age, 4)', data=data).fit()
+lreg5 = smf.ols(formula='wage~age + np.power(age, 2) + np.power(age, 3) + np.power(age, 4) + np.power(age, 5)', data=data).fit()
+
+anova_table = sm.stats.anova_lm(lreg1, lreg2, lreg3, lreg4, lreg5)
+
+print('\nANOVA comparing different polynomial fits: wage vs. age')
+print(anova_table)
+
+lregew1 = smf.ols(formula='wage~education + age', data=data).fit()
+lregew2 = smf.ols(formula='wage~education + age + np.power(age, 2)', data=data).fit()
+lregew3 = smf.ols(formula='wage~education + age + np.power(age, 2) + np.power(age, 3)', data=data).fit()
+
+anova_table2 = sm.stats.anova_lm(lregew1, lregew2, lregew3)
+
+print('\nANOVA comparing different polynomial fits: wage vs. eduction and age')
+print(anova_table2)
 
 plt.show()
 """
