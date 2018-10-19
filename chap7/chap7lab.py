@@ -80,6 +80,8 @@ print(anova_table2)
 data['wage250'] = data['wage'] > 250
 
 greg = smf.glm(formula='wage250~age + np.power(age, 2) + np.power(age, 3) + np.power(age, 4)', data=data, family=sm.families.Binomial()).fit()
+print(greg.summary())
+
 
 #Logistic regression confidence intervals#
 greg_pred = greg.get_prediction(testdata, weights=1)
@@ -97,6 +99,14 @@ axg.plot(testdata['age'], testdata['gobs_ci_lower'], 'r--')
 axg.plot(testdata['age'], testdata['gobs_ci_upper'], 'r--')
 axg.plot(testdata['age'], testdata['gmean_ci_lower'], 'b--')
 axg.plot(testdata['age'], testdata['gmean_ci_upper'], 'b--')
+
+#Fit step function#
+data['agebin'] = pd.cut(data['age'], 4)
+
+#linear regression#
+lbreg = smf.ols(formula='wage~agebin', data=data).fit()
+
+print(lbreg.summary())
 
 plt.show()
 """
