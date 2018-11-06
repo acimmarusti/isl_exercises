@@ -7,7 +7,7 @@ import statsmodels.formula.api as smf
 import statsmodels.api as sm
 from statsmodels.stats.outliers_influence import variance_inflation_factor, summary_table
 from statsmodels.sandbox.regression.predstd import wls_prediction_std
-
+from scipy import interpolate
 
 filename = '../Wage.csv'
 
@@ -47,13 +47,13 @@ testdata[['lpred','lstderr','lmean_ci_lower','lmean_ci_upper','lobs_ci_lower','l
 
 #Plot regression and confidence intervals#
 f, ax = plt.subplots()
-ax.plot(data['age'], data['wage'], 'o')
+ax.plot(data['age'], data['wage'], 'ko', markersize=0.25, alpha=0.5)
 ax.plot(testdata['age'], testdata['lpred'], 'g-')
 
-ax.plot(testdata['age'], testdata['lobs_ci_lower'], 'r--')
-ax.plot(testdata['age'], testdata['lobs_ci_upper'], 'r--')
-ax.plot(testdata['age'], testdata['lmean_ci_lower'], 'b--')
-ax.plot(testdata['age'], testdata['lmean_ci_upper'], 'b--')
+#ax.plot(testdata['age'], testdata['lobs_ci_lower'], 'r--')
+#ax.plot(testdata['age'], testdata['lobs_ci_upper'], 'r--')
+ax.plot(testdata['age'], testdata['lmean_ci_lower'], 'g--', alpha=0.8)
+ax.plot(testdata['age'], testdata['lmean_ci_upper'], 'g--', alpha=0.8)
 
 #ANOVA#
 lreg1 = smf.ols(formula='wage~age', data=data).fit()
@@ -82,7 +82,7 @@ data['wage250'] = data['wage'] > 250
 greg = smf.glm(formula='wage250~age + np.power(age, 2) + np.power(age, 3) + np.power(age, 4)', data=data, family=sm.families.Binomial()).fit()
 print(greg.summary())
 
-
+"""FIX: TypeError get_prediction() got an unexpected keyword argument 'weights' 
 #Logistic regression confidence intervals#
 greg_pred = greg.get_prediction(testdata, weights=1)
 
@@ -92,13 +92,14 @@ testdata[['gpred','gstderr','gmean_ci_lower','gmean_ci_upper','gobs_ci_lower','g
 
 #Plot regression and confidence intervals#
 fg, axg = plt.subplots()
-axg.plot(data['age'], data['wage250'], 'o')
+#axg.plot(data['age'], data['wage250'], 'ko', markersize=0.25, alpha=0.5)
 axg.plot(testdata['age'], testdata['gpred'], 'g-')
 
-axg.plot(testdata['age'], testdata['gobs_ci_lower'], 'r--')
-axg.plot(testdata['age'], testdata['gobs_ci_upper'], 'r--')
-axg.plot(testdata['age'], testdata['gmean_ci_lower'], 'b--')
-axg.plot(testdata['age'], testdata['gmean_ci_upper'], 'b--')
+#axg.plot(testdata['age'], testdata['gobs_ci_lower'], 'r--')
+#axg.plot(testdata['age'], testdata['gobs_ci_upper'], 'r--')
+axg.plot(testdata['age'], testdata['gmean_ci_lower'], 'g--', alpha=0.8)
+axg.plot(testdata['age'], testdata['gmean_ci_upper'], 'g--', alpha=0.8)
+"""
 
 #Fit step function#
 data['agebin'] = pd.cut(data['age'], 4)
@@ -107,6 +108,33 @@ data['agebin'] = pd.cut(data['age'], 4)
 lbreg = smf.ols(formula='wage~agebin', data=data).fit()
 
 print(lbreg.summary())
+
+#Get intervals from data and apply to testdata#
+interval_list = data['agebin'].unique().tolist()
+cuts = [interval.left for interval in interval_list]
+cuts.append(interval_list[-1].right)
+testdata['agebin'] = pd.cut(testdata['age'], cuts)
+
+lbreg_pred = lbreg.get_prediction(testdata, weights=1)
+
+lb_pred = lbreg_pred.summary_frame(alpha=0.05)
+
+testdata[['lbpred','lbstderr','lbmean_ci_lower','lbmean_ci_upper','lbobs_ci_lower','lbobs_ci_upper']] = lb_pred
+
+#Plot regression and confidence intervals#
+flb, axlb = plt.subplots()
+axlb.plot(data['age'], data['wage'], 'ko', markersize=0.25, alpha=0.5)
+axlb.plot(testdata['age'], testdata['lbpred'], 'g-')
+
+#axlb.plot(testdata['age'], testdata['lbobs_ci_lower'], 'r--')
+#axlb.plot(testdata['age'], testdata['lbobs_ci_upper'], 'r--')
+axlb.plot(testdata['age'], testdata['lbmean_ci_lower'], 'g--', alpha=0.8)
+axlb.plot(testdata['age'], testdata['lbmean_ci_upper'], 'g--', alpha=0.8)
+
+
+##Splines##
+tck = interpolate.splrep(data['age'], data['wage'], s=0)
+testdata['cubic'] = interpolate.splev(testdata['age'], tck, der=0)
 
 plt.show()
 """
