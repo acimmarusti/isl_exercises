@@ -35,10 +35,12 @@ lreg = smf.ols(formula='wage~age + np.power(age, 2) + np.power(age, 3) + np.powe
 
 print(lreg.summary())
 
-#Polynomial regression confidence intervals#
+#Define range for predition test data#
 testdata = pd.DataFrame()
 testdata['age'] = np.arange(data['age'].min(), data['age'].max(), dtype=int)
 
+
+#Polynomial regression confidence intervals#
 lreg_pred = lreg.get_prediction(testdata, weights=1)
 
 prediction = lreg_pred.summary_frame(alpha=0.05)
@@ -47,7 +49,7 @@ testdata[['lpred','lstderr','lmean_ci_lower','lmean_ci_upper','lobs_ci_lower','l
 
 #Plot regression and confidence intervals#
 f, ax = plt.subplots()
-ax.plot(data['age'], data['wage'], 'ko', markersize=0.25, alpha=0.5)
+ax.scatter(data['age'], data['wage'], facecolor='None', edgecolor='k', alpha=0.1)
 ax.plot(testdata['age'], testdata['lpred'], 'g-')
 
 #ax.plot(testdata['age'], testdata['lobs_ci_lower'], 'r--')
@@ -92,7 +94,7 @@ testdata[['gpred','gstderr','gmean_ci_lower','gmean_ci_upper','gobs_ci_lower','g
 
 #Plot regression and confidence intervals#
 fg, axg = plt.subplots()
-#axg.plot(data['age'], data['wage250'], 'ko', markersize=0.25, alpha=0.5)
+#axg.scatter(data['age'], data['wage250'], facecolor='None', edgecolor='k', alpha=0.1)
 axg.plot(testdata['age'], testdata['gpred'], 'g-')
 
 #axg.plot(testdata['age'], testdata['gobs_ci_lower'], 'r--')
@@ -123,7 +125,7 @@ testdata[['lbpred','lbstderr','lbmean_ci_lower','lbmean_ci_upper','lbobs_ci_lowe
 
 #Plot regression and confidence intervals#
 flb, axlb = plt.subplots()
-axlb.plot(data['age'], data['wage'], 'ko', markersize=0.25, alpha=0.5)
+axlb.scatter(data['age'], data['wage'], facecolor='None', edgecolor='k', alpha=0.1)
 axlb.plot(testdata['age'], testdata['lbpred'], 'g-')
 
 #axlb.plot(testdata['age'], testdata['lbobs_ci_lower'], 'r--')
@@ -133,28 +135,28 @@ axlb.plot(testdata['age'], testdata['lbmean_ci_upper'], 'g--', alpha=0.8)
 
 
 ##Splines##
-tck = interpolate.splrep(data['age'], data['wage'], s=0)
+tck = interpolate.splrep(data['age'], np.array(data['wage'], s=0)
+data['cubic'] = interpolate.splev(data['age'], tck, der=0)
 testdata['cubic'] = interpolate.splev(testdata['age'], tck, der=0)
 
+lcbreg = smf.ols(formula='wage~cubic', data=data).fit()
+
+#Polynomial regression confidence intervals#
+lcreg_pred = lcreg.get_prediction(testdata, weights=1)
+
+lcpred = lcreg_pred.summary_frame(alpha=0.05)
+
+testdata[['lcpred','lcstderr','lcmean_ci_lower','lcmean_ci_upper','lcobs_ci_lower','lcobs_ci_upper']] = lcpred
+
+#Plot regression and confidence intervals#
+fc, axc = plt.subplots()
+axc.scatter(data['age'], data['wage'], facecolor='None', edgecolor='k', alpha=0.1)
+axc.plot(testdata['age'], testdata['lcpred'], 'g-')
+
+#axc.plot(testdata['age'], testdata['lobs_ci_lower'], 'r--')
+#axc.plot(testdata['age'], testdata['lobs_ci_upper'], 'r--')
+axc.plot(testdata['age'], testdata['lcmean_ci_lower'], 'g--', alpha=0.8)
+axc.plot(testdata['age'], testdata['lcmean_ci_upper'], 'g--', alpha=0.8)
+
+
 plt.show()
-"""
-st, fitdata, ss2 = summary_table(lreg, alpha=0.05)
-
-fittedvalues = fitdata[:,2]
-predict_mean_se  = fitdata[:,3]
-predict_mean_ci_low, predict_mean_ci_upp = fitdata[:,4:6].T
-predict_ci_low, predict_ci_upp = fitdata[:,6:8].T
-
-# check we got the right things
-print np.max(np.abs(lreg.fittedvalues - fittedvalues))
-print np.max(np.abs(iv_l - predict_ci_low))
-print np.max(np.abs(iv_u - predict_ci_upp))
-
-plt.plot(data['age'], data['wage'], 'o')
-plt.plot(data['age'], fittedvalues, '-', lw=2)
-plt.plot(data['age'], predict_ci_low, 'r--', lw=2)
-plt.plot(data['age'], predict_ci_upp, 'r--', lw=2)
-plt.plot(data['age'], predict_mean_ci_low, 'r--', lw=2)
-plt.plot(data['age'], predict_mean_ci_upp, 'r--', lw=2)
-plt.show()
-"""
