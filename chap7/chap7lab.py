@@ -135,11 +135,21 @@ axlb.plot(testdata['age'], testdata['lbmean_ci_upper'], 'g--', alpha=0.8)
 
 
 ##Splines##
-tck = interpolate.splrep(data['age'], np.array(data['wage'], s=0)
-data['cubic'] = interpolate.splev(data['age'], tck, der=0)
-testdata['cubic'] = interpolate.splev(testdata['age'], tck, der=0)
+#Procedural method#
+#NOT working, throws error on input data
+#tck = interpolate.splrep(data['age'], data['wage'], s=0)
+#data['cubic'] = interpolate.splev(data['age'], tck, der=0)
+#testdata['cubic'] = interpolate.splev(testdata['age'], tck, der=0)
 
-lcbreg = smf.ols(formula='wage~cubic', data=data).fit()
+#Object-oriented method#
+#NOT working, throws pandas keyerror -1
+#knots = [25, 40, 60]
+#tck = interpolate.LSQUnivariateSpline(data['age'], data['wage'], knots)
+#data['cubic'] = tck(data['age'])
+#testdata['cubic'] = tck(testdata['age'])
+
+
+#lcbreg = smf.ols(formula='wage~cubic', data=data).fit()
 
 #Polynomial regression confidence intervals#
 lcreg_pred = lcreg.get_prediction(testdata, weights=1)
@@ -160,3 +170,9 @@ axc.plot(testdata['age'], testdata['lcmean_ci_upper'], 'g--', alpha=0.8)
 
 
 plt.show()
+
+merda = pd.DataFrame()
+merda['x'] = np.arange(0, 7, 1)
+merda['y'] = np.sin(merda['x'])
+
+cazzo = interpolate.splrep(merda['x'], merda['y'], s=0)
