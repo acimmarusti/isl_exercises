@@ -30,6 +30,9 @@ print(data.shape)
 
 print(data.dtypes)
 
+#Sort data by age in ascending order#
+data.sort_values(by='age', inplace=True)
+
 #Polynomial regression#
 lreg = smf.ols(formula='wage~age + np.power(age, 2) + np.power(age, 3) + np.power(age, 4)', data=data).fit()
 
@@ -84,24 +87,26 @@ data['wage250'] = data['wage'] > 250
 greg = smf.glm(formula='wage250~age + np.power(age, 2) + np.power(age, 3) + np.power(age, 4)', data=data, family=sm.families.Binomial()).fit()
 print(greg.summary())
 
-"""FIX: TypeError get_prediction() got an unexpected keyword argument 'weights' 
+#FIX: TypeError get_prediction() got an unexpected keyword argument 'weights' 
 #Logistic regression confidence intervals#
-greg_pred = greg.get_prediction(testdata, weights=1)
+#greg_pred = greg.get_prediction(testdata, weights=1)
+greg_pred = greg.get_prediction(testdata)
 
 gpred = greg_pred.summary_frame(alpha=0.05)
 
-testdata[['gpred','gstderr','gmean_ci_lower','gmean_ci_upper','gobs_ci_lower','gobs_ci_upper']] = np.exp(gpred) / (1 + np.exp(gpred))
+#testdata[['gpred','gstderr','gmean_ci_lower','gmean_ci_upper']] = np.exp(gpred) / (1 + np.exp(gpred))
+testdata[['gpred','gstderr','gmean_ci_lower','gmean_ci_upper']] = gpred
 
 #Plot regression and confidence intervals#
 fg, axg = plt.subplots()
-#axg.scatter(data['age'], data['wage250'], facecolor='None', edgecolor='k', alpha=0.1)
+axg.scatter(data['age'], data['wage250'], facecolor='None', edgecolor='k', alpha=0.1)
 axg.plot(testdata['age'], testdata['gpred'], 'g-')
 
 #axg.plot(testdata['age'], testdata['gobs_ci_lower'], 'r--')
 #axg.plot(testdata['age'], testdata['gobs_ci_upper'], 'r--')
 axg.plot(testdata['age'], testdata['gmean_ci_lower'], 'g--', alpha=0.8)
 axg.plot(testdata['age'], testdata['gmean_ci_upper'], 'g--', alpha=0.8)
-"""
+
 
 #Fit step function#
 data['agebin'] = pd.cut(data['age'], 4)
@@ -133,13 +138,13 @@ axlb.plot(testdata['age'], testdata['lbpred'], 'g-')
 axlb.plot(testdata['age'], testdata['lbmean_ci_lower'], 'g--', alpha=0.8)
 axlb.plot(testdata['age'], testdata['lbmean_ci_upper'], 'g--', alpha=0.8)
 
-
+"""
 ##Splines##
 #Procedural method#
 #NOT working, throws error on input data
-#tck = interpolate.splrep(data['age'], data['wage'], s=0)
-#data['cubic'] = interpolate.splev(data['age'], tck, der=0)
-#testdata['cubic'] = interpolate.splev(testdata['age'], tck, der=0)
+tck = interpolate.splrep(data['age'], data['wage'], s=0)
+data['cubic'] = interpolate.splev(data['age'], tck, der=0)
+testdata['cubic'] = interpolate.splev(testdata['age'], tck, der=0)
 
 #Object-oriented method#
 #NOT working, throws pandas keyerror -1
@@ -149,7 +154,7 @@ axlb.plot(testdata['age'], testdata['lbmean_ci_upper'], 'g--', alpha=0.8)
 #testdata['cubic'] = tck(testdata['age'])
 
 
-#lcbreg = smf.ols(formula='wage~cubic', data=data).fit()
+lcbreg = smf.ols(formula='wage~cubic', data=data).fit()
 
 #Polynomial regression confidence intervals#
 lcreg_pred = lcreg.get_prediction(testdata, weights=1)
@@ -168,7 +173,7 @@ axc.plot(testdata['age'], testdata['lcpred'], 'g-')
 axc.plot(testdata['age'], testdata['lcmean_ci_lower'], 'g--', alpha=0.8)
 axc.plot(testdata['age'], testdata['lcmean_ci_upper'], 'g--', alpha=0.8)
 
-
+"""
 plt.show()
 
 merda = pd.DataFrame()
